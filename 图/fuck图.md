@@ -121,6 +121,136 @@ class Solution:
 + 时间复杂度：$O(MN)$
 + 空间复杂度：$O(MN)$
 
+## 433.最小基因变化[中等]
+
+### 链接
+
++ [433. 最小基因变化 - 力扣（LeetCode）](https://leetcode.cn/problems/minimum-genetic-mutation)
+
+### 题目
+
+基因序列可以表示为一条由 8 个字符组成的字符串，其中每个字符都是 `'A'`、`'C'`、`'G'` 和 `'T'` 之一。
+
+假设我们需要调查从基因序列 `start` 变为 `end` 所发生的基因变化。一次基因变化就意味着这个基因序列中的一个字符发生了变化。
+
+- 例如，`"AACCGGTT" --> "AACCGGTA"` 就是一次基因变化。
+
+另有一个基因库 `bank` 记录了所有有效的基因变化，只有基因库中的基因才是有效的基因序列。（变化后的基因必须位于基因库 `bank` 中）
+
+给你两个基因序列 `start` 和 `end` ，以及一个基因库 `bank` ，请你找出并返回能够使 `start` 变化为 `end` 所需的最少变化次数。如果无法完成此基因变化，返回 `-1` 。
+
+注意：起始基因序列 `start` 默认是有效的，但是它并不一定会出现在基因库中。
+
+### 思路
+
+求最少变化次数，优先考虑使用BFS。当然可以预处理一下来剪枝。
+
+### 解法
+
+```python
+class Solution:
+    def minMutation(self, startGene: str, endGene: str, bank: List[str]) -> int:
+        if startGene == endGene:
+            return 0
+        bank = set(bank)
+        if endGene not in bank:
+            return -1
+        queue = deque()
+        queue.append(startGene)
+        step = 0
+        while queue:
+            for _ in range(len(queue)):
+                gene = queue.popleft()
+                if gene == endGene:
+                    return step
+                for i, x in enumerate(gene):
+                    for y in "ACGT":
+                        if x != y:
+                            nxt = gene[:i] + y + gene[i + 1:]
+                            if nxt in bank:
+                                bank.remove(nxt)
+                                queue.append(nxt) 
+            step += 1
+        return -1
+```
+
++ 时间复杂度：$O(C\times n\times m)$，其中$n$是基因序列长度，$m$是数组`bank`的长度。对于队列中的每个合法的基因序列每次都需要计算 $C\times n$ 种变化，在这里 $C=4$；队列中最多有 $m$ 个元素，因此时间复杂度为 $O(C\times n\times m)$。
++ 空间复杂度：$O(n\times m)$。
+
+## 127.单词接龙[困难]
+
+### 链接
+
++ [127. 单词接龙 - 力扣（LeetCode）](https://leetcode.cn/problems/word-ladder)
+
+### 题目
+
+字典 `wordList` 中从单词 `beginWord` 到 `endWord` 的 **转换序列** 是一个按下述规格形成的序列 `beginWord -> s1 -> s2 -> ... -> sk`：
+
+- 每一对相邻的单词只差一个字母。
+-  对于 `1 <= i <= k` 时，每个 `si` 都在 `wordList` 中。注意， `beginWord` 不需要在 `wordList` 中。
+- `sk == endWord`
+
+给你两个单词 `beginWord` 和 `endWord` 和一个字典 `wordList` ，返回 *从 `beginWord` 到 `endWord` 的 **最短转换序列** 中的 **单词数目*** 。如果不存在这样的转换序列，返回 `0` 。
+
+### 思路
+
+求最短操作次数，优先考虑BFS。这道题可以用 [433.最小基因变化](#433.最小基因变化[中等]) 一样的思路做，但是会超时，所以必须得预处理。这里**预处理**的方法也很tricky，不用每次两两比较两个单词的差异，找只有一个字符不一样的邻居，而是把可能不一样的字符改成通配符，把符合这个pattern的单词都放到里面去，这样建图的开销就是$O(L\times N)$了。
+
+第二个tricky点就是**双向BFS**，根据给定字典构造的图可能会很大，广度优先搜索的搜索空间大小依赖于每层节点的分支数量，假如每个节点的分支数量相同，搜索空间会随着层数的增长指数级的增加。考虑一个简单的二叉树，每一层都是满二叉树的扩展，节点的数量会以 2 为底数呈指数增长。
+
+如果使用两个同时进行的广搜可以有效地减少搜索空间。一边从 beginWord 开始，另一边从 endWord 开始。我们每次从两边各扩展一层节点，当发现某一时刻两边都访问过同一顶点时就停止搜索。这就是双向广度优先搜索，它可以可观地减少搜索空间大小，从而提高代码运行效率。
+
+<img src="./figures/127-analysis.png" width="40%">
+
+### 解法：双向BFS
+
+```python
+class Solution:
+    def ladderLength(self, beginWord: str, endWord: str, wordList: list[str]) -> int:
+        if endWord not in wordList:
+            return 0
+        
+        L = len(beginWord)
+        all_combo_dict = defaultdict(list)
+        for word in wordList + [beginWord]:
+            for i in range(L):
+                # 预处理：构建通用 pattern 映射，比如 "h*t" -> ["hot", "hit"]
+                pattern = word[:i] + '*' + word[i+1:]
+                all_combo_dict[pattern].append(word)
+        
+        begin_queue = deque([(beginWord, 1)])
+        end_queue = deque([(endWord, 1)])
+        begin_visited = {beginWord: 1}
+        end_visited = {endWord: 1}
+
+        while begin_queue and end_queue:
+            # 总是扩展队列短的那一边
+            if len(begin_queue) <= len(end_queue):
+                queue, visited, other_visited = begin_queue, begin_visited, end_visited
+            else:
+                queue, visited, other_visited = end_queue, end_visited, begin_visited
+            
+            ans = inf
+            # 按层处理
+            for _ in range(len(queue)):
+                word, level = queue.popleft()
+                for i in range(L):
+                    pattern = word[:i] + '*' + word[i+1:]
+                    for next_word in all_combo_dict.get(pattern, []):
+                        if next_word in other_visited:
+                            ans = min(ans, level + other_visited[next_word])
+                        if next_word not in visited:
+                            visited[next_word] = level + 1
+                            queue.append((next_word, level + 1))
+            if ans != inf:
+                return ans
+        return 0
+```
+
++ 时间复杂度：$O(N\times L^2)$，其中$N$是`wordList`的长度，$L$是单词的长度。双向BFS最坏时间复杂度是$O(N\times L)$，一个单词可以扩展出$O(L)$个`next_word`。
++ 空间复杂度：$O(N\times L^2)$，哈希表总共有$O(N\times L)$个节点，每个节点占用$O(L)$空间。
+
 
 
 # 拓扑排序
@@ -226,11 +356,52 @@ class Solution:
         return visited == numCourses
 ```
 
+## 208.课程表 II[中等]
 
+### 链接
 
++ [210. 课程表 II - 力扣（LeetCode）](https://leetcode.cn/problems/course-schedule-ii)
 
+### 题目
 
+现在你总共有 `numCourses` 门课需要选，记为 `0` 到 `numCourses - 1`。给你一个数组 `prerequisites` ，其中 `prerequisites[i] = [ai, bi]` ，表示在选修课程 `ai` 前 **必须** 先选修 `bi` 。
 
+- 例如，想要学习课程 `0` ，你需要先完成课程 `1` ，我们用一个匹配来表示：`[0,1]` 。
+
+返回你为了学完所有课程所安排的学习顺序。可能会有多个正确的顺序，你只要返回 **任意一种** 就可以了。如果不可能完成所有课程，返回 **一个空数组** 。
+
+### 思路
+
+与上题一样的思路，不过要用栈收集后序遍历的根节点，最后对栈倒序输出。
+
+### 解法
+
+```python
+class Solution:
+    def findOrder(self, numCourses: int, prerequisites: List[List[int]]) -> List[int]:
+        graph = [[] for _ in range(numCourses)]
+        for u, v in prerequisites:
+            graph[v].append(u)
+        visited = [0] * numCourses
+        stack = []
+        def dfs(u):
+            visited[u] = 1
+            for v in graph[u]:
+                if visited[v] == 1:
+                    return False
+                elif visited[v] == 0:
+                    if not dfs(v):
+                        return False
+            stack.append(u)
+            visited[u] = 2
+            return True
+
+        for i in range(numCourses):
+            if visited[i] == 0:
+                if not dfs(i):
+                    return []
+        return list(reversed(stack))
+```
 
 
 

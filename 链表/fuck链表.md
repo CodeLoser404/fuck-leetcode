@@ -21,20 +21,17 @@
 
 ### 解法
 
-```c++
-class Solution {
-public:
-    ListNode* reverseList(ListNode* head) {
-        ListNode* pre = NULL, *cur = head;
-        while(cur != NULL){
-            ListNode *nxt = cur->next;
-            cur->next = pre;
-            pre = cur;
-            cur = nxt;
-        }
-        return pre;
-    }
-};
+```python
+class Solution:
+    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        pre = None
+        cur = head
+        while cur:
+            nxt = cur.next
+            cur.next = pre
+            pre = cur
+            cur = nxt
+        return pre
 ```
 
 ## 92.反转链表 II[中等]*
@@ -102,40 +99,35 @@ public:
 
 ### 解法
 
-```c++
-class Solution {
-public:
-    ListNode* reverseKGroup(ListNode* head, int k) {
-        // 统计节点总数
-        int n = 0;
-        ListNode* tmp = head;
-        while(tmp){
-            n++;
-            tmp = tmp->next;
-        }
+```python
+class Solution:
+    def getLength(self, head):
+        res = 0
+        while head:
+            head = head.next
+            res += 1
+        return res
 
-        ListNode* dummy = new ListNode(-1, head);
-        ListNode* leftPre = dummy;
-        while(n >= k){
-            n -= k;
+    def reverseKGroup(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:
+        n = self.getLength(head)
+        dummyHead = ListNode(0, head)
+        leftPre = dummyHead
+        while k <= n:
+            pre = None
+            cur = leftPre.next
+            for i in range(k):
+                nxt = cur.next
+                cur.next = pre
+                pre = cur
+                cur = nxt
+            # 此时rightNxt指向cur/nxt
+            leftNode = leftPre.next
+            leftNode.next = cur
+            leftPre.next = pre
+            leftPre = leftNode
+            n -= k
+        return dummyHead.next
 
-            ListNode* pre = NULL;
-            ListNode* cur = leftPre->next;
-            for(int i = 0; i < k; ++i){
-                ListNode* tmp = cur->next;
-                cur->next = pre;
-                pre = cur;
-                cur = tmp;
-            }
-            // 此时cur指向rightNext
-            ListNode* leftNode = leftPre->next; // 原本蓝色的第一个节点
-            leftNode->next = cur;
-            leftPre->next = pre;
-            leftPre = leftNode;
-        }
-        return dummy->next;
-    }
-};
 ```
 
 ## 237.删除链表中的节点[中等]*
@@ -206,6 +198,60 @@ class Solution:
         prev.next = list1 if list1 else list2
         return dummyHead.next
 ```
+
+## 160.相交链表[简单]
+
+### 链接
+
++ [160. 相交链表 - 力扣（LeetCode）](https://leetcode.cn/problems/intersection-of-two-linked-lists)
+
+### 题目
+
+给你两个单链表的头节点 `headA` 和 `headB` ，请你找出并返回两个单链表相交的起始节点。如果两个链表不存在相交节点，返回 `null` 。
+
+图示两个链表在节点 `c1` 开始相交**：**
+
+[![img](https://assets.leetcode.cn/aliyun-lc-upload/uploads/2018/12/14/160_statement.png)](https://assets.leetcode.cn/aliyun-lc-upload/uploads/2018/12/14/160_statement.png)
+
+题目数据 **保证** 整个链式结构中不存在环。
+
+**注意**，函数返回结果后，链表必须 **保持其原始结构** 。
+
+**进阶：**你能否设计一个时间复杂度 `O(m + n)` 、仅用 `O(1)` 内存的解决方案？
+
+### 思路
+
+如果不限空间复杂度，直接用哈希表就行。如果限制常量空间，我觉得就有一丢丢难了，但如果刷过了，就很简单了。先分别从两个头节点开始遍历各自的链表，求出链表的长度，然后求出二者的长度差，让长的先走几步，对齐之后二者链表长度相等，那么接下来直接遍历就行。
+
+### 解法
+
+```python
+class Solution:
+    def getLength(self, head):
+        length = 0
+        while head:
+            head = head.next
+            length += 1
+        return length
+
+    def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> Optional[ListNode]:
+        m = self.getLength(headA)
+        n = self.getLength(headB)
+        p, q = headA, headB
+        while m > n:
+            p = p.next
+            m -= 1
+        while m < n:
+            q = q.next
+            n -= 1
+        while p != q:
+            p = p.next
+            q = q.next
+        return p
+```
+
++ 时间复杂度：$O(m+n)$
++ 空间复杂度：$O(1)$
 
 
 
@@ -356,26 +402,19 @@ a+(n+1)b+nc=2(a+b)⟹a=c+(n−1)(b+c)
 
 ### 解法
 
-```c++
-class Solution {
-public:
-    ListNode *detectCycle(ListNode *head) {
-        ListNode* slow = head;
-        ListNode* fast = head;
-        while(fast != NULL && fast->next != NULL){
-            slow = slow->next;
-            fast = fast->next->next;
-            if(fast == slow){ // 相遇后,slow走c步,head也走c步,二者之间的距离刚好是环长的倍数,所以持续走总会相遇
-                while(slow != head){
-                    slow = slow->next;
-                    head = head->next;
-                }
-                return slow;
-            }
-        }
-        return NULL;
-    }
-};
+```python
+class Solution:
+    def detectCycle(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        slow = fast = head
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+            if slow == fast:
+                while slow != head:
+                    slow = slow.next
+                    head = head.next
+                return slow
+        return None
 ```
 
 + 时间复杂度：$O(N)$
@@ -467,27 +506,20 @@ public:
 
 ### 解法
 
-```c++
-class Solution {
-public:
-    ListNode* removeNthFromEnd(ListNode* head, int n) {
-        ListNode* dummyHead = new ListNode(-1, head);
-        ListNode* fast = dummyHead, *slow = dummyHead;
-        while(n > 0) {
-            fast = fast->next;
-            n -= 1;
-        }
-        while(fast->next) {
-            fast = fast->next;
-            slow = slow->next;
-        }
-        // 此时slow指向倒数第N+1个结点
-        ListNode* tmp = slow->next;
-        slow->next = tmp->next;
-        delete tmp;
-        return dummyHead->next;
-    }
-};
+```python
+class Solution:
+    def removeNthFromEnd(self, head: Optional[ListNode], n: int) -> Optional[ListNode]:
+        dummyHead = ListNode(-1, head) # 去掉删除头节点的特殊情况
+        slow, fast = dummyHead, dummyHead
+        while n > 0:
+            fast = fast.next
+            n -= 1
+        while fast.next:
+            slow = slow.next
+            fast = fast.next
+        # 此时slow指向倒数第N+1个结点
+        slow.next = slow.next.next
+        return dummyHead.next
 ```
 
 
@@ -511,6 +543,8 @@ public:
 ### 题目
 
 给你一个单链表的头节点 `head` ，请你判断该链表是否为回文链表。如果是，返回 `true` ；否则，返回 `false` 。
+
+**进阶：**你能否用 `O(n)` 时间复杂度和 `O(1)` 空间复杂度解决此题？
 
 ### 思路
 

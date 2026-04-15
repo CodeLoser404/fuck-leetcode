@@ -242,10 +242,6 @@ public:
 
 返回 所有可能的有效组合的列表 。该列表不能包含相同的组合两次，组合可以以任何顺序返回。
 
-### 思路
-
-求组合，典型的回溯问题。
-
 ### 解法
 
 ```c++
@@ -360,6 +356,48 @@ public:
         return res;
     }
 };
+```
+
+## 39.组合总和[中等]
+
+### 链接
+
++ [39. 组合总和 - 力扣（LeetCode）](https://leetcode.cn/problems/combination-sum)
+
+### 题目
+
+给你一个 **无重复元素** 的整数数组 `candidates` 和一个目标整数 `target` ，找出 `candidates` 中可以使数字和为目标数 `target` 的 所有 **不同组合** ，并以列表形式返回。你可以按 **任意顺序** 返回这些组合。
+
+`candidates` 中的 **同一个** 数字可以 **无限制重复被选取** 。如果至少一个数字的被选数量不同，则两种组合是不同的。 
+
+对于给定的输入，保证和为 `target` 的不同组合数少于 `150` 个。
+
+### 思路
+
+求组合，典型的回溯问题。和前面几题的区别在于元素可以重复选取，所以`dfs`下一层时起始索引可以和当前层的起始索引一样。
+
+### 解法
+
+```python
+class Solution:
+    def combinationSum(self, candidates: List[int], target: int) -> List[List[int]]:
+        res = []
+        path = []
+        n = len(candidates)
+        def dfs(i, s):
+            if s > target:
+                return
+            elif s == target:
+                res.append(path.copy())
+                return
+            
+            for j in range(i, n):
+                path.append(candidates[j])
+                dfs(j, s + candidates[j])
+                path.pop()
+
+        dfs(0, 0)
+        return res
 ```
 
 

@@ -151,13 +151,32 @@ class Solution:
         return dfs(n - 1)
 ```
 
-### 解法：动态规划
+### 解法2：动态规划
 
 将递归翻译成递推：
 
 + dfs $\rightarrow$ dp数组
 + 递归 $\rightarrow$ 循环
 + 递归边界 $\rightarrow$ 数组初始化
+
+```python
+class Solution:
+    def rob(self, nums: List[int]) -> int:
+        n = len(nums)
+        if n == 1:
+            return nums[0]
+        dp = [0] * n
+        dp[0] = nums[0]
+        dp[1] = max(nums[0], nums[1])
+        for i in range(2, n):
+            dp[i] = max(dp[i-1], dp[i-2]+nums[i])
+        return dp[n-1]
+```
+
++ 时间复杂度：$O(N)$
++ 空间复杂度：$O(N)$
+
+### 优化
 
 ```python
 class Solution:
@@ -171,6 +190,46 @@ class Solution:
             dp1 = new_dp
         return dp1
 ```
+
++ 时间复杂度：$O(N)$
++ 空间复杂度：$O(1)$
+
+## 213.打家劫舍 II[中等]
+
+### 链接
+
++ [213. 打家劫舍 II - 力扣（LeetCode）](https://leetcode.cn/problems/house-robber-ii/description/)
+
+### 题目
+
+与 [198.打家劫舍](#198.打家劫舍[中等]) 基本一致，不过数组是环形的。
+
+### 思路
+
+不要想太复杂，①如果偷了第一家，那么最后一家就不能偷；②如果不偷第一家，那么最后一家就能偷。分成这两种情况分别偷，然后取max即可。
+
+### 解法
+
+```python
+class Solution:
+    def rob(self, nums: List[int]) -> int:
+        def robRange(left, right):
+            dp0 = 0
+            dp1 = 0
+            for i in range(left, right + 1):
+                new_dp = max(dp1, dp0 + nums[i])
+                dp0 = dp1
+                dp1 = new_dp
+            return dp1
+        n = len(nums)
+        if n == 1:
+            return nums[0]
+        elif n == 2:
+            return max(nums[0], nums[1])
+        return max(robRange(0, n - 2), robRange(1, n - 1))
+```
+
+
 
 
 
@@ -524,6 +583,12 @@ def zero_one_knapsack(c: int, w: List[int], v: List[int]) -> int:
 
 + [322.零钱兑换](#零钱兑换[中等])属于恰好装，求最小价值和的问题，因此初始化时`dp[0]`为`0`，`dp[j>0]`为`inf`
 
+---
+
+一般地，如果在`dp[i]`的状态转移方程中要用到`dp[i]`，那么`dp[0]`为合法值，`dp[j>0]`必须为非法值；如果不会用到`dp[i]`，那么只要保证`dp[0]`合法即可。
+
+一维数组比较好判断用没有`dp[i]`，如果是二维数组，只要状态转移方程中有`dp[i][x]`或`dp[x][j]`，那么就可以认为是用到了。
+
 
 
 ## 494.目标和[中等]*
@@ -547,7 +612,7 @@ def zero_one_knapsack(c: int, w: List[int], v: List[int]) -> int:
 
 看到这个题目第一眼应该可以想到，将其转换成对某个位置选`+`或选`-`的问题，而结果又是求表达式的数目而非所有可能的表达式，那么就要想到使用动态规划。
 
-根据[焚诀](#焚诀)的经验，能转换成选或不选的问题就能用回溯做，虽然性能差劲，但由于是第一道实战题，所以这里就做一下吧。
+根据 [焚诀](#焚诀) 的经验，能转换成选或不选的问题就能用回溯做，虽然性能差劲，但由于是第一道实战题，所以这里就做一下吧。
 
 ### 解法1：回溯
 
@@ -689,7 +754,76 @@ class Solution:
         return False
 ```
 
+## 2915.和为目标值的最长子序列的长度[中等]
 
+### 链接
+
++ [2915. 和为目标值的最长子序列的长度 - 力扣（LeetCode）](https://leetcode.cn/problems/length-of-the-longest-subsequence-that-sums-to-target/)
+
+### 题目
+
+给你一个下标从 **0** 开始的整数数组 `nums` 和一个整数 `target` 。
+
+返回和为 `target` 的 `nums` 子序列中，子序列 **长度的最大值** 。如果不存在和为 `target` 的子序列，返回 `-1` 。
+
+**子序列** 指的是从原数组中删除一些或者不删除任何元素后，剩余元素保持原来的顺序构成的数组。
+
+### 思路
+
+不要被子序列蒙蔽而想到用线性dp，其实就是从数组中选一些元素且不重复，要求元素和为`target`，这不就是**0-1背包问题**嘛。具体地，就是求**恰好装**`target`的**最长**子序列长度，注意这是一个**最大价值和**问题，而不是方案数问题，因为递推式是`dp[j] = max(dp[j], dp[j - num] + 1)`而不是`dp[j] += dp[j - num]`。根据经验公式，`dp[0]=0,dp[j>0]=-inf`。
+
+### 解法
+
+```python
+class Solution:
+    def lengthOfLongestSubsequence(self, nums: List[int], target: int) -> int:
+        n = len(nums)
+        dp = [-inf] * (target + 1)
+        dp[0] = 0
+        for num in nums:
+            for j in range(target, num - 1, -1):
+                dp[j] = max(dp[j], dp[j - num] + 1)
+        return dp[target] if dp[target] > 0 else -1
+```
+
+## 474.一和零[中等]
+
+### 链接
+
++ [474. 一和零 - 力扣（LeetCode）](https://leetcode.cn/problems/ones-and-zeroes/)
+
+### 题目
+
+给你一个二进制字符串数组 `strs` 和两个整数 `m` 和 `n` 。
+
+请你找出并返回 `strs` 的最大子集的长度，该子集中 **最多** 有 `m` 个 `0` 和 `n` 个 `1` 。
+
+如果 `x` 的所有元素也是 `y` 的元素，集合 `x` 是集合 `y` 的 **子集** 。
+
+### 思路
+
+设 `strs[i]` 中 0 的个数为 `cnt_0[i]`，1 的个数为 `cnt_1[i]`，那么本题相当于：
+
+有一个容量为 `(m,n)` 的背包，至多可以装入 `m` 个 0 和 `n` 个 1。现在有 `n` 个物品，每个物品的体积为 `(cnt_0[i],cnt_1[i])`，表示该物品有 `cnt_0[i]` 个 0 和 `cnt_1[i]` 个 1。问：最多可以选多少个物品？
+
+这就相当于背包有两种体积（二维），所以在定义状态的时候，相比只有一种体积的 0-1 背包，要多加一个参数。
+
+**0-1背包**$\rightarrow$倒序遍历；**至多装**，**最大价值和**$\rightarrow$dp数组初始化全为0。
+
+### 解法
+
+```python
+class Solution:
+    def findMaxForm(self, strs: List[str], m: int, n: int) -> int:
+        dp = [[0] * (n + 1) for _ in range(m + 1)]
+        for s in strs:
+            cnt0 = s.count('0')
+            cnt1 = len(s) - cnt0
+            for i in range(m, cnt0 - 1, -1):
+                for j in range(n, cnt1 - 1, -1):
+                    dp[i][j] = max(dp[i][j], dp[i-cnt0][j-cnt1] + 1)
+        return dp[m][n]
+```
 
 
 
@@ -847,13 +981,46 @@ class Solution:
         return dp[n]
 ```
 
+## 518.零钱兑换 II[中等]
+
+### 链接
+
++ [518. 零钱兑换 II - 力扣（LeetCode）](https://leetcode.cn/problems/coin-change-ii/)
+
+### 题目
+
+给你一个整数数组 `coins` 表示不同面额的硬币，另给一个整数 `amount` 表示总金额。
+
+请你计算并返回可以凑成总金额的硬币组合数。如果任何硬币组合都无法凑出总金额，返回 `0` 。
+
+假设每一种面额的硬币有无限个。 
+
+### 思路
+
+做了前两题，看到这题谁想不到是完全背包题谁是猪。直接经验公式秒了，有感觉吗？**方案数**，**恰好装**$\rightarrow$`dp[0]=1,dp[j>0]=0`；**完全背包**$\rightarrow$正序遍历。
+
+### 解法
+
+```python
+class Solution:
+    def change(self, amount: int, coins: List[int]) -> int:
+        dp = [0] * (amount + 1)
+        dp[0] = 1
+        for coin in coins:
+            for j in range(coin, amount + 1):
+                dp[j] += dp[j - coin]
+        return dp[amount]
+```
+
+
+
 
 
 
 
 # 线性DP
 
-## 焚诀
+## ==焚诀==
 
 线性DP解决的问题通常是关于一个**子序列、子数组或子串**的，要求在其中进行选择或进行某些操作以达到最优结果。
 
@@ -868,11 +1035,15 @@ class Solution:
 关于dp数组的定义有以下两种区别：
 
 + **相邻无关子序列问题**（比如 0-1 背包），适合「选或不选」。每个元素互相独立，只需依次考虑每个物品选或不选。定义`dp[i]`为**考虑序列前`i`个元素**的最优解。
-+ **相邻相关子序列问题**（比如最长递增子序列），适合「枚举选哪个」。我们需要知道子序列中的相邻两个数的关系。定义`dp[i]`为**以`nums[i]`结尾或开头**的最优解。
++ **相邻相关子序列问题**（比如最长递增子序列），适合「枚举选哪个」。我们需要知道子序列中的相邻两个数的关系。定义`dp[i]`为**以`nums[i]`结尾或开头**的最优解。（**对于子串、子数组问题必然是相邻相关的**）
 
 相邻无关子序列问题一般问的就是考虑前`n`个元素，所以最后返回`dp[n]`就行了；而相邻相关子序列问题一般问的是所有子问题的最值，`dp[n-1]`只代表以`nums[n-1]`结尾的最优解，`dp[0,n]`中可能还有其他解更优，所以一般结果要返回`max(dp)`或`min(dp)`。
 
-在dp数组的起始索引上，对于相邻无关子序列问题，我还是习惯以1为起始索引；对于相邻相关子序列问题，习惯以0为起始索引。
+---
+
+在dp数组的起始索引上，如果dp数组表示使用**前`i`个元素，那么索引从1开始，数组大小为`n+1`**；如果表示**第`i`个元素，那么索引从0开始，数组大小为`n`**。
+
+所以，**对于相邻无关子序列问题，习惯以1为起始索引；对于相邻相关子序列问题，习惯以0为起始索引**。
 
 ## 1143.最长公共子序列[中等]*
 
@@ -946,7 +1117,19 @@ class Solution:
 
 定义`dp[i][j]`为考虑`s`的前`i`个字母和`t`的前`j`个字母的LCS。
 
-动态规划关于dp数组索引从0还是从1开始其实都可以，这里从1开始，因此下面dp数组的大小为`[n+1][m+1]`。因此for遍历时也应该从1开始，到`m+1`/`n+1`结束，不过这里把递推式整体右移了一位，因此遍历的元素就左移一位。
+```python
+class Solution:
+    def longestCommonSubsequence(self, text1: str, text2: str) -> int:
+        n = len(text1)
+        m = len(text2)
+        dp = [[0] * (m + 1) for _ in range(n + 1)]
+       	for i in range(1, n + 1):
+            for j in range(1, m + 1):
+                dp[i][j] = dp[i-1][j-1] + 1 if text1[i-1] == text2[j-1] else max(dp[i-1][j], dp[i][j-1])
+        return dp[n][m]
+```
+
+上面是需要记忆的通用的写法，相对来说直观一点，唯一需要注意的是，dp数组的索引和物品的索引错了一位，`dp[0][0]`可以理解为初始状态。下面的写法就把dp数组和物品数组的索引对齐了，熟练了再用。
 
 ```python
 class Solution:
@@ -954,8 +1137,8 @@ class Solution:
         n = len(text1)
         m = len(text2)
         dp = [[0] * (m + 1) for _ in range(n + 1)]
-       	for i,x in enumerate(text1):
-            for j,y in enumerate(text2):
+       	for i, x in enumerate(text1):
+            for j, y in enumerate(text2):
                 dp[i+1][j+1] = dp[i][j] + 1 if x == y else max(dp[i][j+1], dp[i+1][j])
         return dp[n][m]
 ```
@@ -1020,7 +1203,7 @@ $$
 >
 > 我个人理解是，在LCS中只是取`max`，在对`dfs(i-1, j)`取max之前，肯定也对`dfs(i-1, j-1)`取过max了，因此`dfs(i-1, j-1)`肯定小于等于`dfs(i-1, j)`或`dfs(i, j-1)`了。而在编辑距离中，我们是取`min`，`dfs(i-1, j-1)`是有可能比`dfs(i, j-1)`和`dfs(i-1, j)`小的（因为我们的递推式只会越算越大，前面的是有可能更小的）
 
-定义`dp[i][j]`为考虑`s`的前`i`个字母和`t`的前`j`个字母的编辑距离。
+定义`dp[i][j]`为考虑`s`的前`i`个字母和`t`的前`j`个字母的编辑距离。另外，==特别注意==：**在线性DP中，多维数组初始化时并不是简单地把`dp[0][0]`设为合法值就完事了，而要根据边界条件和题意，有可能需要初始化一行或一列的值**
 
 ### 解法
 
@@ -1201,6 +1384,48 @@ class Solution:
         return max(dp_max)
 ```
 
+## 918.环形子数组的最大和[中等]
+
+### 链接
+
++ [918. 环形子数组的最大和 - 力扣（LeetCode）](https://leetcode.cn/problems/maximum-sum-circular-subarray)
++ [【图解】正难则反，一张图秒懂！](https://leetcode.cn/problems/maximum-sum-circular-subarray/solutions/2351107/mei-you-si-lu-yi-zhang-tu-miao-dong-pyth-ilqh)
+
+### 题目
+
+给定一个长度为 `n` 的**环形整数数组** `nums` ，返回 *`nums` 的非空 **子数组** 的最大可能和* 。
+
+**环形数组** 意味着数组的末端将会与开头相连呈环状。形式上， `nums[i]` 的下一个元素是 `nums[(i + 1) % n]` ， `nums[i]` 的前一个元素是 `nums[(i - 1 + n) % n]` 。
+
+**子数组** 最多只能包含固定缓冲区 `nums` 中的每个元素一次。形式上，对于子数组 `nums[i], nums[i + 1], ..., nums[j]` ，不存在 `i <= k1, k2 <= j` 其中 `k1 % n == k2 % n` 。
+
+### 思路
+
+<img src="./figures/918-analysis.png" width="50%">
+
+### 解法
+
+```python
+class Solution:
+    def maxSubarraySumCircular(self, nums: List[int]) -> int:
+        n = len(nums)
+        max_sum = -inf
+        max_dp = 0
+        min_sum = 0
+        min_dp = 0
+        for num in nums:
+            max_dp = max(max_dp, 0) + num # max_dp[i] = max(max_dp[i-1],0) + num
+            max_sum = max(max_sum, max_dp)
+            min_dp = min(min_dp, 0) + num
+            min_sum = min(min_sum, min_dp)
+        if max_sum < 0:
+            return max_sum
+        return max(max_sum, sum(nums) - min_sum)
+```
+
++ 时间复杂度：$O(N)$
++ 空间复杂度：$O(1)$
+
 ## 139.单词拆分[中等]
 
 ### 链接
@@ -1216,7 +1441,7 @@ class Solution:
 
 ### 思路
 
-**子串相关的能否构成问题**，要想到线性DP。既然是线性DP，再来判断一下是**相邻无关子序列问题**，还是相邻相关子序列问题。应该是属于前者，因为`dp[i]`和`dp[j<i]`没有直接关系。那么定义`dp[i]`表示是否可以把`s[:i]`划分成若干段，使得每一段都在`wordDict`中。我的单词匹配思路是这样的，遍历`s`，如果发现某个字符`c`和`wordDict`中某些单词最后一个字符相同，然后再根据这些单词的长度，往前比较若干个字符，看是否和这些单词完全相同。（我看别人的解法，都是两层循环，内层循环遍历`s[:i]`，对于每一个子串`s[j:i]`看是否在`wordDict`中。使用**哈希表**，可以一定程度减少匹配的次数，如果更进一步，可以使用字典树）不难得到递推式就是`dp[i] = dp[i] or dp[i - len(word)]`。根据经验，对于**恰好装**问题，`dp[0]=True`，`dp[j>0]=False`。
+**子串相关的能否构成问题**，要想到线性DP。既然是线性DP，再来判断一下是**相邻无关子序列问题**，还是相邻相关子序列问题。应该是属于前者，因为求`dp[i]`的递推式不依赖之前处理的序列中某个元素的值。那么定义`dp[i]`表示是否可以把`s[:i]`划分成若干段，使得每一段都在`wordDict`中。我的单词匹配思路是这样的，遍历`s`，如果发现某个字符`c`和`wordDict`中某些单词最后一个字符相同，然后再根据这些单词的长度，往前比较若干个字符，看是否和这些单词完全相同。（我看别人的解法，都是两层循环，内层循环遍历`s[:i]`，对于每一个子串`s[j:i]`看是否在`wordDict`中。使用**哈希表**，可以一定程度减少匹配的次数，如果更进一步，可以使用字典树）不难得到递推式就是`dp[i] = dp[i] or dp[i - len(word)]`。根据经验，对于**恰好装**问题，`dp[0]=True`，`dp[j>0]=False`。
 
 灵神把这道题归类到了**划分型DP**中，TODO：如果碰到的类似题目比较多了，并且能够抽取鲜明的特征，就单独开一个章节吧。现在感觉用线性DP的思路也能做。
 
@@ -1291,12 +1516,147 @@ class Solution:
             if s[i] == ')':
                 if s[i - 1] == '(':
                     dp[i] = dp[i - 2] + 2 if i >= 2 else 2
-                elif i - dp[i - 1] > 0 and s[i - dp[i - 1] - 1] == '(':
-                    dp[i] = dp[i - 1] + dp[i - dp[i - 1] - 2]  + 2
+                elif i - dp[i - 1] >= 1 and s[i - dp[i - 1] - 1] == '(':
+                    dp[i] = dp[i - 1] + 2
+                    dp[i] += dp[i - dp[i - 1] - 2] if i - dp[i - 1] >= 2 else 0
         return max(dp)
 ```
 
 最后求`max(dp)`时间是$O(N)$，我们在循环中已经计算出来的`dp[i]`是不会再修改了的，所以可以在循环的同时不断地max算出结果，可以节省一次遍历。
+
+## 97.交错字符串[中等]
+
+### 链接
+
++ [97. 交错字符串 - 力扣（LeetCode）](https://leetcode.cn/problems/interleaving-string)
+
+### 题目
+
+给定三个字符串 `s1`、`s2`、`s3`，请你帮忙验证 `s3` 是否是由 `s1` 和 `s2` **交错** 组成的。
+
+**示例 1：**
+
+![img](https://assets.leetcode.com/uploads/2020/09/02/interleave.jpg)
+
+```
+输入：s1 = "aabcc", s2 = "dbbca", s3 = "aadbbcbcac"
+输出：true
+```
+
+### 思路
+
+**子串相关的能否构成问题**，要想到线性DP。不过一开始我没看出来递推式，所以写了个记忆化搜索版本。思路是这样的，在`s1`、`s2`、`s3`中都各有一个指针`p1`、`p2`、`p3`来遍历，假设`s1[p1]==s3[p3]`那么`p1`就可以继续后移，`s2[p2]==s3[p3]`那么`p3`也可以继续后移，而对于一个`s3[p3]`有可能和`s1[p1]`和`s2[p2]`都相等，所以分别递归去处理，然后回溯消除影响。
+
+### 解法1：记忆化搜索
+
+```python
+class Solution:
+    def isInterleave(self, s1: str, s2: str, s3: str) -> bool:
+        n1 = len(s1)
+        n2 = len(s2)
+        m = len(s3)
+        if n1 + n2 != m:
+            return False
+        @cache
+        def dfs(p1, p2):
+            p3 = p1 + p2
+            if p3 == m:
+                return p1 == n1 and p2 == n2
+            if p1 < n1 and s1[p1] == s3[p3] and dfs(p1 + 1, p2):
+                return True
+            if p2 < n2 and s2[p2] == s3[p3] and dfs(p1, p2 + 1):
+                return True
+            return False
+        return dfs(0, 0)
+```
+
+### 解法2：动态规划
+
+这里有两个序列（`s3`依赖于`s1`和`s2`），所以我们定义`dp[i][j]`表示 `s1` 前 `i` 个字符和 `s2` 前 `j` 个字符能否组成 `s3` 前 `i+j` 个字符。
+
+这道题和 [1143.最长公共子序列](#1143.最长公共子序列[中等]) 在处理索引上略有不同，虽然dp数组的定义是差不多的。但是在这里我们可以只使用一个字符串中的字符，而不使用另一个字符串的字符，所以`dp[0][1]`和`dp[1][0]`都需要在for循环中处理（`i`、`j`从0开始遍历）；而LCS那道题，必须同时从两个字符串取字符，所以`dp[0][0]`、`dp[0][1]`、`dp[1][0]`都可以理解为初始状态。
+
+```python
+class Solution:
+    def isInterleave(self, s1: str, s2: str, s3: str) -> bool:
+        n1 = len(s1)
+        n2 = len(s2)
+        if n1 + n2 != len(s3):
+            return False
+        dp = [[False] * (n2 + 1) for _ in range(n1 + 1)]
+        dp[0][0] = True
+        for i in range(n1 + 1):
+            for j in range(n2 + 1):
+                p = i + j - 1
+                if i > 0:
+                    dp[i][j] = dp[i][j] or (dp[i - 1][j] and s1[i - 1] == s3[p]) 
+                if j > 0:
+                    dp[i][j] = dp[i][j] or (dp[i][j - 1] and s2[j - 1] == s3[p])
+        return dp[n1][n2]
+```
+
+注意上面的`dp[i][j] or`不能省略，否则假设`s1`可以往后移，而`s2`不可以往后移，那么后面的结果会覆盖掉前面的，除非改成下面这样
+
+```python
+if i > 0 and dp[i-1][j] and s1[i-1] == s3[p]:
+    dp[i][j] = True
+if j > 0 and dp[i][j-1] and s2[j-1] == s3[p]:
+    dp[i][j] = True
+```
+
+## 3290.最高乘法得分[中等]
+
+### 链接
+
++ [3290. 最高乘法得分 - 力扣（LeetCode）](https://leetcode.cn/problems/maximum-multiplication-score/)
+
+### 题目
+
+给你一个大小为 4 的整数数组 `a` 和一个大小 **至少**为 4 的整数数组 `b`。
+
+你需要从数组 `b` 中选择四个下标 `i0`, `i1`, `i2`, 和 `i3`，并满足 `i0 < i1 < i2 < i3`。你的得分将是 `a[0] * b[i0] + a[1] * b[i1] + a[2] * b[i2] + a[3] * b[i3]` 的值。
+
+返回你能够获得的 **最大** 得分。
+
+### 思路
+
+**子序列相关的最值问题**，要想到线性DP，并且是相邻无关子序列问题。定义`dp[i][j]`为使用`a`的前`i`个元素，`b`的前`j`个元素能构成的最高乘法得分，dp数组索引从1开始，`b`的第`j`个元素，也就是`b[j-1]`，如果使用，那么这一组的得分就是`dp[j-1]*a[i-1]`，然后加上`dp[i-1][j-1]`；如果不用它，那么继承`dp[i][j-1]`，所以递推式就是`dp[i][j] = max(dp[i][j-1], dp[i-1][j-1] + b[j-1] * a[i-1])`。
+
+这里唯一值得注意的就是这个初始化，因为`dp[i][j]`的状态转移方程中有`dp[i][j-1]`，所以只有初始状态是合法值0，dp数组中其他元素必须是非法值`-inf`。注意到求`dp[1][j]`并且使用`b[j-1]`时需要用到`dp[0][j-1]`，所以`dp[0][:]`这一行必须全初始化成0，否则永远更新不了使用第一组得分的情况。
+
+从题意的角度理解，不使用`a`中的元素，无论`b`怎么选，最大得分就是0，这是一个合法的状态。而使用`a`中的元素，就必须用`b`中的元素，所以`dp[i>0][0]`都是非法的。所以下面两种写法都是可以的。
+
+而比如 [97.交错字符串](#97.交错字符串[中等]) 这道题，只有两个字符串都不取`dp[0][0]`是合法的，而在不验证`s1`和`s3`前缀是否相等的情况下显然不能把`dp[i>0][0]`也认为是合法。
+
+==再次强调：==**在线性DP中，多维数组初始化时并不是简单地把`dp[0][0]`设为合法值就完事了，而要根据边界条件和题意，有可能需要初始化一行或一列的值**
+
+### 解法
+
+```python
+class Solution:
+    def maxScore(self, a: List[int], b: List[int]) -> int:
+        m, n = len(a), len(b)
+        dp = [[-inf] * (n + 1) for _ in range(m + 1)]
+        for i in range(n + 1):
+            dp[0][j] = 0
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                dp[i][j] = max(dp[i][j-1], dp[i-1][j-1] + b[j-1] * a[i-1])
+        return dp[m][n]
+```
+
+```python
+class Solution:
+    def maxScore(self, a: List[int], b: List[int]) -> int:
+        m, n = len(a), len(b)
+        dp = [[0] * (n + 1) for _ in range(m + 1)]
+        for i in range(1, m + 1):
+            dp[i][0] = -inf
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                dp[i][j] = max(dp[i][j-1], dp[i-1][j-1] + b[j-1] * a[i-1])
+        return dp[m][n]
+```
 
 
 
@@ -1824,7 +2184,7 @@ class Solution:
 
 在当前节点“拐弯”的最大路径和=左子树的最大链和+右子树的最大链和+当前节点值。
 
-返回给父节点=max(左子树的最大链和，右子树的最大链和) + 当前节点值。
+返回给父节点=max(左子树的最大链和，右子树的最大链和) + 当前节点值。注意，有可能子节点的最大链和还是负的，这时候不要直接返回给父节点，而是和0取max后再返回。
 
 ### 解法
 

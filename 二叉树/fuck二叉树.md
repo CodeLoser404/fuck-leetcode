@@ -275,7 +275,7 @@ class Solution:
         self.flatten(tmp)
 ```
 
-## 437.路径总和 III
+## 437.路径总和 III[中等]
 
 ### 链接
 
@@ -291,7 +291,7 @@ class Solution:
 
 首先对于一个节点，我们想要知道从这个节点出发，有多少条路径和等于`targetSum`，所以据此可以写一个dfs出来。但是二叉树中任何一个节点，都可以作为这个起点，所以我们在外层还要以dfs的形式遍历整棵树。另外注意判断条件一定是`node.val == tsum`而
 
-### 解法
+### 解法1：DFS
 
 ```python
 class Solution:
@@ -312,17 +312,38 @@ class Solution:
         return dfs(root, targetSum) + self.pathSum(root.left, targetSum) + self.pathSum(root.right, targetSum)
 ```
 
++ 时间复杂度：$O(N^2)$，每个节点都要做一次DFS，每次DFS都是$O(N)$
++ 空间复杂度：$O(N)$，栈开销
 
+### 解法2：前缀和
 
+因为路径方向必须是向下的，我们其实可以把树的分叉看成多条不同的链，那么这个问题就简化为在这些链上去找一个区间和为`targetSum`的数目。看到求区间和，要想到前缀和数组。下面的代码相当于 [560.和为 K 的子数组[中等]](..\数组\fuck数组.md#560.和为 K 的子数组[中等]) 的一次遍历写法的二叉树版本。使用哈希表缓存前缀和，可以避免遍历前缀和数组来两两匹配找区间和。
 
+```python
+class Solution:
+    def pathSum(self, root: TreeNode, targetSum: int) -> int:
+        prefix = collections.defaultdict(int)
+        prefix[0] = 1
 
+        def dfs(root, curr):
+            if not root:
+                return 0
+            
+            ret = 0
+            curr += root.val
+            ret += prefix[curr - targetSum] # 后 - 前 = targetSum
+            prefix[curr] += 1
+            ret += dfs(root.left, curr)
+            ret += dfs(root.right, curr)
+            prefix[curr] -= 1 # 回溯
 
+            return ret
 
+        return dfs(root, 0)
+```
 
-
-
-
-
++ 时间复杂度：$O(N)$
++ 空间复杂度：$O(N)$
 
 
 
@@ -486,21 +507,90 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # BFS
+
+面试手搓时可能会考察自己构造二叉树，我第一次面字节时卡这上面卡了半天，我是大蠢猪，贴此代码，以示警戒！
+
+```c++
+#include <iostream>
+#include <vector>
+#include <queue>
+using namespace std;
+
+// 二叉树节点定义
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
+
+// 构造二叉树的函数
+TreeNode* buildTree(const vector<int*>& arr) {
+    if (arr.empty() || arr[0] == nullptr) return nullptr;
+
+    TreeNode* root = new TreeNode(*arr[0]);
+    queue<TreeNode*> q;
+    q.push(root);
+
+    int i = 1;
+    while (!q.empty() && i < arr.size()) {
+        TreeNode* node = q.front();
+        q.pop();
+
+        // 左孩子
+        if (arr[i] != nullptr) {
+            node->left = new TreeNode(*arr[i]); // 一定是先在父节点构造子节点
+            q.push(node->left);
+        }
+        i++;
+
+        // 右孩子
+        if (i < arr.size() && arr[i] != nullptr) {
+            node->right = new TreeNode(*arr[i]);
+            q.push(node->right);
+        }
+        i++;
+    }
+    return root;
+}
+
+// 打印二叉树（层序遍历）
+void printTree(TreeNode* root) {
+    if (!root) return;
+    queue<TreeNode*> q;
+    q.push(root);
+    while (!q.empty()) {
+        int size = q.size();
+        for (int i = 0; i < size; i++) {
+            TreeNode* node = q.front();
+            q.pop();
+            if (node) {
+                q.push(node->left);
+                q.push(node->right);
+                cout << node->val << " ";
+            }
+            else {
+                cout << "null ";
+            }
+        }
+        cout << endl;
+    }
+}
+
+int main() {
+    // 用 int* 指针来表示 null
+    int a = 1, b = 3;
+    vector<int*> arr = {&a, &b, nullptr};
+
+    TreeNode* root = buildTree(arr);
+    printTree(root);
+    // 1
+    // 3 null
+}
+```
+
+
 
 ## 102.二叉树的层序遍历[中等]*
 
@@ -583,7 +673,7 @@ public:
 };
 ```
 
-## 513.找树左下角的值*
+## 513.找树左下角的值*[中等]
 
 ### 链接
 
@@ -619,7 +709,44 @@ public:
 };
 ```
 
+## 662.二叉树最大宽度[中等]
 
+### 链接
+
++ [662. 二叉树最大宽度 - 力扣（LeetCode）](https://leetcode.cn/problems/maximum-width-of-binary-tree)
+
+### 题目
+
+给你一棵二叉树的根节点 `root` ，返回树的 **最大宽度** 。
+
+树的 **最大宽度** 是所有层中最大的 **宽度** 。
+
+每一层的 **宽度** 被定义为该层最左和最右的非空节点（即，两个端点）之间的长度。将这个二叉树视作与满二叉树结构相同，两端点间会出现一些延伸到这一层的 `null` 节点，这些 `null` 节点也计入长度。
+
+题目数据保证答案将会在 **32 位** 带符号整数范围内。
+
+### 思路
+
+第一次碰到这个题时的想法是，BFS然后对于空节点放虚拟节点进去，当成一个满二叉树来遍历，但是怎么避免虚拟节点无限递归下去是个问题，可以遍历队列看是不是都是空节点，若是则break。看个官解，不得不说很妙了，学习一下。这里对有值的节点额外维护它在满二叉树中的索引，直接简化掉了前面的问题。
+
+### 解法
+
+```python
+class Solution:
+    def widthOfBinaryTree(self, root: Optional[TreeNode]) -> int:
+        res = 1
+        arr = [[root, 1]]
+        while arr:
+            tmp = []
+            for node, index in arr:
+                if node.left:
+                    tmp.append([node.left, index * 2])
+                if node.right:
+                    tmp.append([node.right, index * 2 + 1])
+            res = max(res, arr[-1][1] - arr[0][1] + 1)
+            arr = tmp
+        return res
+```
 
 
 

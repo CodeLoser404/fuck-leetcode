@@ -118,23 +118,50 @@ public:
 
 
 
+# 与
 
+## 201.数字范围按位与[中等]
 
+### 链接
 
++ [201. 数字范围按位与 - 力扣（LeetCode）](https://leetcode.cn/problems/bitwise-and-of-numbers-range)
 
+### 题目
 
+给你两个整数 `left` 和 `right` ，表示区间 `[left, right]` ，返回此区间内所有数字 **按位与** 的结果（包含 `left` 、`right` 端点）。
 
+### 思路
 
+直接把`[left, right]`之间所有的数按位与会超时。
 
+<img src="https://assets.leetcode.cn/solution-static/201/1.png" width="50%">
 
+注意到，当把`[left, right]`之间所有数字按位与时，实际求的就是这些数字的公共前缀。
 
+### 解法1：位移
 
+```python
+class Solution:
+    def rangeBitwiseAnd(self, left: int, right: int) -> int:
+        shift = 0
+        while left < right:
+            left = left >> 1
+            right = right >> 1
+            shift += 1
+        return left << shift
+```
 
+### 解法2：Brian Kernighan 算法
 
+Brian Kernighan 算法的关键在于把`number`和`number - 1`按位与运算之后，`number`的二进制表示中**最右边的1(lowbit)会被抹去变成0**，利用这个，也可以快速计算公共前缀。
 
-
-
-
+```python
+class Solution:
+    def rangeBitwiseAnd(self, left: int, right: int) -> int:
+        while left < right:
+            right &= right - 1
+        return right
+```
 
 
 
