@@ -49,9 +49,9 @@ if __name__ == "__main__":
     if "-d" in args and args.index("-d") + 1 < len(args):
         d_index = args.index("-d")
         prob_number = args[d_index + 1]
-    if "-n" in args and args.index("-n") + 1 < len(args):
-        n_index = args.index("-n")
-        prob_title = args[n_index + 1]
+    if "-n" in args and args.index("-t") + 1 < len(args):
+        t_index = args.index("-t")
+        prob_title = args[t_index + 1]
 
     if not prob_title and not prob_number:
         usage()
