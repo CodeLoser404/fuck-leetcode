@@ -29,13 +29,13 @@
 
 此外，你可以假设该网格的四条边均被水包围。
 
-### 思路
+### ==思路==
 
 这个题不需要分层信息，所以用DFS写起来更简洁一点，由于可以把已访问过的陆地标记为水，甚至不需要额外的`visited`数组。
 
-另外DFS（包括二叉树里的DFS）写法一般分为两种，一种是在DFS开头处理当前节点（如下面这种），一种是在准备递归到下一层时提前处理下一个节点，并且这种写法需要在主函数里调用DFS时也在DFS外面提前处理第一个节点。第一种写法更简洁，我喜欢第一种。
+另外**DFS（包括二叉树里的DFS）写法**一般分为两种，一种是在**DFS开头处理当前节点**（如下面这种），一种是在*准备递归到下一层时提前处理下一个节点*，并且这种写法需要在主函数里调用DFS时也在DFS外面提前处理第一个节点。第一种写法更简洁，我喜欢第一种。
 
-对于边界条件判断，也有两种写法，一种是写在DFS开头，一种是在准备递归前。在图的题目中一般用第二种，因为对于一些无效情况可以减少递归次数。在二叉树的题目中，经常会有多个递归，第一种写法把边界条件判断统一写在开头，代码更简洁点。
+对于边界条件判断，也有两种写法，一种是**写在DFS开头**，一种是**在准备递归前**。在图的题目中一般用第二种，因为对于一些无效情况可以减少递归次数。在二叉树的题目中，经常会有多个递归，第一种写法把边界条件判断统一写在开头，代码更简洁点。（混着写也不是不行就是了）
 
 ### 解法：DFS
 
@@ -172,7 +172,7 @@ class Solution:
                         if x != y:
                             nxt = gene[:i] + y + gene[i + 1:]
                             if nxt in bank:
-                                bank.remove(nxt)
+                                bank.remove(nxt) # 从某条路径可以直接到达bank中的一个中间状态，显然会比有环更短
                                 queue.append(nxt) 
             step += 1
         return -1
@@ -312,7 +312,7 @@ DFS 中的节点通常分三种状态：
 ```python
 class Solution:
     def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:
-        graph = [[] for _ in range(numCourses)]
+        graph = [[] for _ in range(numCourses)] # 邻接表
         for to_, from_ in prerequisites:
             graph[from_].append(to_)
 
@@ -378,7 +378,7 @@ class Solution:
 
 与上题一样的思路，不过要用栈收集后序遍历的根节点，最后对栈倒序输出。
 
-### 解法
+### 解法：DFS
 
 ```python
 class Solution:
@@ -406,6 +406,263 @@ class Solution:
                     return []
         return list(reversed(stack))
 ```
+
+# 最小生成树
+
+## 焚诀
+
+最小生成树本质是贪心算法，Prim算法按点贪心，Kruskal算法按边贪心。
+
++ **Prim算法**：**从某一个顶点开始构建树，每次将代价最小的新顶点纳入生成树，直到所有顶点纳入为止。**
+  + 时间复杂度：$O(|V|^2)$，适合边稠密图
++ **Kruskal算法**：**每次选择一条权值最小的边，使这条边的两边连通（原本已经连通的就不选），直到所有边都连通。**
+  + 时间复杂度：$O(|E|\log|E|)$，适合边稀疏图
+
+## 1584.连接所有点的最小费用[中等]
+
+### 链接
+
++ [1584. 连接所有点的最小费用 - 力扣（LeetCode）](https://leetcode.cn/problems/min-cost-to-connect-all-points/description/)
+
+### 题目
+
+给你一个`points` 数组，表示 2D 平面上的一些点，其中 `points[i] = [xi, yi]` 。
+
+连接点 `[xi, yi]` 和点 `[xj, yj]` 的费用为它们之间的 **曼哈顿距离** ：`|xi - xj| + |yi - yj|` ，其中 `|val|` 表示 `val` 的绝对值。
+
+请你返回将所有点连接的最小总费用。只有任意两点之间 **有且仅有** 一条简单路径时，才认为所有点都已连接。
+
+### 思路
+
+这道题非常直白的MST问题，思路没啥好讲的，主要讲讲代码实现。一般用**Kruskal算法+并查集**的组合，一个是下面的并查集模板要背下来，一个是要会自定义`sort`函数的比较器，默认是`less<T>`升序，即`a < b`。
+
+### 解法1：Kruskal算法
+
+```c++
+class DSU{
+private:
+    vector<int> parent, rank;
+    int n;
+public:
+    DSU(int n){
+        this->n = n;
+        parent.resize(n);
+        rank.resize(n, 1);
+        for(int i = 0; i < n; ++i){
+            parent[i] = i;
+        }
+    }
+
+    int find(int x){
+        return parent[x] == x ? x : parent[x] = find(parent[x]); // 路径压缩
+    }
+
+    bool unionSet(int x, int y){
+        int fx = find(x), fy = find(y);
+        if(fx == fy) return false;
+        // rank fx >= rank fy
+        if(rank[fx] < rank[fy])
+            swap(fx, fy);
+        parent[fy] = fx;
+        rank[fx] += rank[fy];
+        return true;
+    }
+};
+
+struct Edge{
+    int len, x, y;
+    Edge(int len, int x, int y): len(len), x(x), y(y) {}
+};
+
+class Solution {
+public:
+    int minCostConnectPoints(vector<vector<int>>& points) {
+        auto dist = [&](int x, int y){
+            return abs(points[x][0] - points[y][0]) + abs(points[x][1] - points[y][1]);
+        };
+        int n = points.size();
+        DSU dsu(n);
+        vector<Edge> edges;
+        for(int i = 0; i < n; ++i){
+            for(int j = i + 1; j < n; ++j){
+                edges.emplace_back(dist(i, j), i, j);
+            }
+        }
+        sort(edges.begin(), edges.end(), [](Edge a, Edge b) { return a.len < b.len;});
+        int cost = 0, num = 0;
+        for(auto& [len, x, y] : edges){ // 边按权值从小到大排序
+            if(dsu.unionSet(x, y)){
+                cost += len;
+                ++num;
+                if(num == n - 1) // 树最多有 n - 1 条边
+                    break;
+            }
+        }
+        return cost;
+    }
+};
+```
+
+### 解法2：Prim算法
+
+```c++
+class Solution {
+public:
+    int minCostConnectPoints(vector<vector<int>>& points) {
+        auto dist = [&](int x, int y){
+            return abs(points[x][0] - points[y][0]) + abs(points[x][1] - points[y][1]);
+        };
+        int n = points.size();
+        vector<bool> visited(n, false);
+        visited[0] = true;
+        vector<int> min_dist(n, 0);
+        for(int i = 1; i < n; ++i){
+            min_dist[i] = dist(0, i);
+        }
+        int cost = 0;
+        for(int num = 0; num < n - 1; ++num){ // 顶点数
+            int next_v = 0;
+            int min_edge = INT_MAX;
+            for(int i = 0; i < n; ++i){
+                if(!visited[i] && min_edge > min_dist[i]){
+                    min_edge = min_dist[i];
+                    next_v = i;
+                }
+            }
+            cost += min_edge;
+            visited[next_v] = true;
+            min_dist[next_v] = 0;
+            for(int i = 0; i < n; ++i){
+                if(!visited[i] && dist(next_v, i) < min_dist[i])
+                    min_dist[i] = dist(next_v, i);
+            }
+        }
+        return cost;
+    }
+};
+```
+
+这个算法的复杂度是$O(V^2)$，但是可以发现它和Dijkstra算法非常像，所以也能用堆优化成$O((V+E)\log V)$，唯一的区别在于更新`min_dist`的时候，Prim算法是`dist[v]=min(dist[v], w)`，Dijkstra是`dist[v]=min(dist[v], dist[u]+w)`（w是u-v的权重）。
+
+# 最短路径
+
+## 焚诀
+
+DFS只能解决无权图的最短路径问题，DFS改进其实就是Dijkstra。
+
+| 对比项         | Dijkstra                       | Bellman-Ford        | Floyd-Warshall     |
+| -------------- | ------------------------------ | ------------------- | ------------------ |
+| 解决问题       | **单源最短路**                 | **单源最短路**      | **任意两点最短路** |
+| 起点数量       | 一个起点                       | 一个起点            | 所有点对           |
+| 图类型         | 有向/无向                      | 有向/无向           | 有向/无向          |
+| 边权限制       | ❌不能有负权边                  | ✅允许负权边         | ✅允许负权边        |
+| 是否能检测负环 | ❌不能                          | ✅可以               | ✅可以              |
+| 核心思想       | 贪心 + 松弛                    | 动态规划思想 + 松弛 | 三重循环 DP        |
+| 主要操作       | 每次选当前距离最小节点         | 不断遍历所有边      | 枚举中间节点       |
+| 常用实现       | 邻接表+堆优化                  | Bellman-Ford/SPFA   | 二维数组           |
+| 时间复杂度     | $O((V+E)\log V)$或$O(E\log V)$ | $O(VE)$             | $O(V^3)$           |
+| 空间复杂度     | $O(V+E)$                       | $O(V+E)$            | $O(V^2)$           |
+| 适合规模       | 大图                           | 中小图              | 小图               |
+| 典型应用       | 路由、导航                     | 负权边问题          | 任意两点距离       |
+
+## 734.网络延迟时间[中等]
+
+### 链接
+
++ [743. 网络延迟时间 - 力扣（LeetCode）](https://leetcode.cn/problems/network-delay-time/)
+
+### 题目
+
+有 `n` 个网络节点，标记为 `1` 到 `n`。
+
+给你一个列表 `times`，表示信号经过 **有向** 边的传递时间。 `times[i] = (ui, vi, wi)`，其中 `ui` 是源节点，`vi` 是目标节点， `wi` 是一个信号从源节点传递到目标节点的时间。
+
+现在，从某个节点 `K` 发出一个信号。需要多久才能使所有节点都收到信号？如果不能使所有节点收到信号，返回 `-1` 。
+
+### 思路
+
+### 解法1：朴素Dijkstra（适用于稠密图）
+
+```c++
+class Solution {
+public:
+    int networkDelayTime(vector<vector<int>> &times, int n, int k) {
+        const int inf = INT_MAX / 2;
+        vector<vector<int>> g(n, vector<int>(n, inf)); // 邻接矩阵
+        for (auto &t : times) {
+            int x = t[0] - 1, y = t[1] - 1;
+            g[x][y] = t[2];
+        }
+
+        vector<int> dist(n, inf);
+        dist[k - 1] = 0;
+        vector<int> used(n);
+        for (int i = 0; i < n; ++i) {
+            int x = -1;
+            for (int y = 0; y < n; ++y) {
+                if (!used[y] && (x == -1 || dist[y] < dist[x])) {
+                    x = y;
+                }
+            }
+            used[x] = true;
+            for (int y = 0; y < n; ++y) {
+                dist[y] = min(dist[y], dist[x] + g[x][y]);
+            }
+        }
+
+        int ans = *max_element(dist.begin(), dist.end());
+        return ans == inf ? -1 : ans;
+    }
+};
+```
+
+### 解法2：堆优化Dijkstra（适用于稀疏图）
+
+注意，我们用堆来维护所有节点到起点的最短路径长度，堆中可能存在一些旧的节点的距离信息，我们不会主动去删除它，而是通过加入一个新的路径更短的节点来解决，这个新路径一定会先于旧路径处理，当旧路径再次弹出时，由于`time > dist[x]`就会被跳过。
+
+```c++
+class Solution {
+public:
+    int networkDelayTime(vector<vector<int>>& times, int n, int k) {
+        const int inf = INT_MAX / 2;
+        vector<vector<pair<int, int>>> g(n); // 邻接表 
+        for(auto& t : times){
+            int x = t[0] - 1, y = t[1] - 1;
+            g[x].emplace_back(y, t[2]);
+        }
+        vector<int> dist(n, inf);
+        dist[k - 1] = 0;
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<>> pq;
+        pq.emplace(0, k - 1);
+        while(!pq.empty()){
+            auto p = pq.top(); pq.pop();
+            int time = p.first, x = p.second;
+            if(time > dist[x]){ // 当前距离大于已知最短距离
+                continue;
+            }
+            for(auto& e : g[x]){
+                int y = e.first, d = dist[x] + e.second;
+                if(d < dist[y]){
+                    dist[y] = d;
+                    pq.emplace(d, y); 
+                }
+            }
+        }
+        int ans = *max_element(dist.begin(), dist.end());
+        return ans == inf ? -1 : ans;
+    }
+};
+```
+
+
+
+
+
+
+
+
+
+
 
 
 

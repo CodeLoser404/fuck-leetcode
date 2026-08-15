@@ -8,9 +8,18 @@
 + **归并多个数据流**（LSM-Tree的compaction就是这个应用）
 + **找Top-N问题**
 
-C++的`priority_queue`默认是大顶堆，使用`priority_queue<int, vector<int>, greater<int>>`可得到小顶堆。
+C++的`priority_queue`默认是大顶堆，使用`priority_queue<int, vector<int>, greater<int>>`可得到小顶堆。（在`<queue>`头文件里）
 
-python轻量级使用可以结合列表和`heapq`工具，或者使用线程安全的`PriorityQueue`类（默认都是小顶堆）
+这里整理一下C++中自定义比较器的场景：（一般比较器表示a在b前面，如果是小于，说明小的在前，即升序；堆的比较器反过来）
+
+| 场景             | 默认规则            | 对应lambda表达式                                 | 记忆                 |
+| ---------------- | ------------------- | ------------------------------------------------ | -------------------- |
+| `sort`           | 升序（`less<T>`）   | `[](int a, int b){ return a < b;}`               | 左边的在前面         |
+| `set`            | 升序（`less<T>`）   | `[](int a, int b){ return a < b;}`               | 左边的在前面         |
+| `priority_queue` | 大顶堆（`less<T>`） | ``[](int a, int b){ return a < b;}``             | 右边的在前面/堆顶    |
+| `lower_bound`等  | 升序（`less<T>`）   | `[](int item,int target){return item < target;}` | 元素是否在target左边 |
+
+python轻量级使用可以结合列表和`heapq`工具，或者使用线程安全的`PriorityQueue`类。（默认都是小顶堆）
 
 
 
@@ -216,8 +225,6 @@ class Solution:
 ### 解法
 
 `priority_queue`默认的比较器是`less<T>`，所以我们要重载`<`运算符，**千万记得最后那个`const`**。或者定义时用`priority_queue<poi, vector<poi>, cmppoi>`，其中`cmppoi`是自定义的一个比较器重载函数调用运算符 `operator(const T&, const T&)`。
-
-**小顶堆的话比较器是左大于右，大顶堆是左小于右**（**右边的元素往堆顶冒**）。**排序算法的比较器是升序是左小于右，降序是左大于右**（**右边的元素往后走**）。
 
 ```c++
 struct poi{
@@ -436,7 +443,7 @@ class Solution:
         pq = []
         m, n = len(nums1), len(nums2)
         for i in range(min(k, m)):
-            heapq.heappush(pq, (num1 + nums2[0], i, 0))
+            heapq.heappush(pq, (nums1[i] + nums2[0], i, 0))
         res = []
         while k:
             _, i, j = heapq.heappop(pq)
@@ -591,7 +598,7 @@ class Solution:
 
 第二种方法是枚举「高」，外层循环枚举某一个柱子，矩形的高就是这个柱子的高度`h`，然后从这个柱子出发分别向左和向右去延伸，直到遇到高度小于`h`的柱子，这就确定了矩形的边界。
 
-上面两种方法的复杂度都是$O(N^2)$，会超时。但是看方法二，不就是要高效找**下一个更小元素**的问题吗？所以可以用**单调递增栈**来实现，我这里的实现类似于 [739.每日温度[中等]](#739.每日温度[中等]) 的解法2，栈中记录**尚未确定下一个更小元素的元素的下标**，所以是在pop时记录。但是遍历完时栈中可能有元素没有处理，对于往右找的，如果数组里没有更小的，说明可以一直取到数组末尾去，所以默认值填`n`；同理往左找默认值填`-1`。在算矩形面积时的宽时`left`和`right`相当于是合法矩阵再往左右走了一格，所以合法的宽是`right-left-1`（算中间的间隔）。
+上面两种方法的复杂度都是$O(N^2)$，会超时。但是看方法二，不就是要高效找**下一个更小元素**的问题吗？所以可以用**单调递增栈**来实现，我这里的实现类似于 [739.每日温度](#739.每日温度[中等]) 的解法2，栈中记录**尚未确定下一个更小元素的元素的下标**，所以是在pop时记录。但是遍历完时栈中可能有元素没有处理，对于往右找的，如果数组里没有更小的，说明可以一直取到数组末尾去，所以默认值填`n`；同理往左找默认值填`-1`。在算矩形面积时的宽时`left`和`right`相当于是合法矩阵再往左右走了一格，所以合法的宽是`right-left-1`（算中间的间隔）。
 
 官解的写法和我刚好相反，但也用的**单调递减栈**，在顺序遍历数组时，如果下一个元素比上一个元素大，那么会正常入栈，那同时就知道下一个元素往左找的第一个更小的元素了，这样每个元素都处理到，在这个时候根据栈空条件填左边界。
 
@@ -695,6 +702,169 @@ class Solution:
 
         return res
 ```
+
+
+
+# 字典树
+
+## 焚诀
+
+什么时候我们要联想到使用字典树/前缀树呢？
+
++ **字符串+前缀关系**
+
+
+
+## 208.实现 Trie（前缀树）[中等]
+
+### 链接
+
++ [208. 实现 Trie (前缀树) - 力扣（LeetCode）](https://leetcode.cn/problems/implement-trie-prefix-tree)
+
+### 题目
+
+**[Trie](https://baike.baidu.com/item/字典树/9825209?fr=aladdin)**（发音类似 "try"）或者说 **前缀树** 是一种树形数据结构，用于高效地存储和检索字符串数据集中的键。这一数据结构有相当多的应用情景，例如自动补全和拼写检查。
+
+请你实现 Trie 类：
+
+- `Trie()` 初始化前缀树对象。
+- `void insert(String word)` 向前缀树中插入字符串 `word` 。
+- `boolean search(String word)` 如果字符串 `word` 在前缀树中，返回 `true`（即，在检索之前已经插入）；否则，返回 `false` 。
+- `boolean startsWith(String prefix)` 如果之前已经插入的字符串 `word` 的前缀之一为 `prefix` ，返回 `true` ；否则，返回 `false` 。
+
+### 思路
+
+**前缀树/字典树**的每个节点包含两部分：
+
++ 指向子节点的指针数组。对于本题而言，只有26个字母。
++ `isEnd`标识是否是一个`word`的结尾。
+
+`search`就是从根往下找，直到找到`word`的最后一个字符，如果所在节点`isEnd=True`，说明`word`在前缀树中；而`startsWith`不需要看`isEnd`。
+
+### 解法
+
+官解直接把`Trie`当做节点类，也不是不行，但感觉不符合一般树数据结构的写法，所以我还是特意定义了一个节点类。另外`searchPrefix`也可以写成递归形式，但是用`for`直接遍历`prefix`会更简单。
+
+```python
+class TrieNode:
+    def __init__(self):
+        self.children = [None] * 26
+        self.isEnd = False
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def searchPrefix(self, prefix: str) -> TrieNode:
+        node = self.root
+        for c in prefix:
+            ch = ord(c) - ord('a')
+            if not node.children[ch]:
+                return None
+            node = node.children[ch]
+        return node
+
+    def insert(self, word: str) -> None:
+        node = self.root
+        for c in word:
+            ch = ord(c) - ord('a')
+            if not node.children[ch]:
+                node.children[ch] = TrieNode()
+            node = node.children[ch]
+        node.isEnd = True
+
+    def search(self, word: str) -> bool:
+        node = self.searchPrefix(word)
+        return node is not None and node.isEnd
+
+    def startsWith(self, prefix: str) -> bool:
+        node = self.searchPrefix(prefix)
+        return True if node else False	
+```
+
+## 212.单词搜索 II[困难]
+
+### 链接
+
++ [212. 单词搜索 II - 力扣（LeetCode）](https://leetcode.cn/problems/word-search-ii/description/)
+
+### 题目
+
+给定一个 `m x n` 二维字符网格 `board` 和一个单词（字符串）列表 `words`， *返回所有二维网格上的单词* 。
+
+单词必须按照字母顺序，通过 **相邻的单元格** 内的字母构成，其中“相邻”单元格是那些水平相邻或垂直相邻的单元格。同一个单元格内的字母在一个单词中不允许被重复使用。
+
+### 思路
+
+这道题和 [79.单词搜索 ](https://leetcode.cn/problems/word-search) 题的区别在于，79题只需要查一个单词，而这道题有一个词表。不难想到枚举所有可能的起点，然后每个起点做DFS，从起点开始到当前节点的这条路径其实就是一条**前缀**路径，不难想到如果在选择下一跳时，新的路径根本不是任何单词的前缀，那么可以做剪枝，这种涉及大量**字符串前缀匹配**的问题要想到使用**前缀树**。
+
+### 解法
+
+```python
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_end_of_word = False
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word):
+        cur = self.root
+        for ch in word:
+            if ch not in cur.children:
+                cur.children[ch] = TrieNode()
+            cur = cur.children[ch]
+
+        cur.is_end_of_word = True
+
+    def search(self, word):
+        cur = self.root
+        for ch in word:
+            if ch in cur.children:
+                cur = cur.children[ch]
+            else:
+                return False
+        found = cur.is_end_of_word
+        return found
+
+class Solution:
+    def findWords(self, board: List[List[str]], words: List[str]) -> List[str]:
+        def dfs(x, y, node, path):
+            if board[x][y] not in node.children:
+                return
+            ch = board[x][y]
+            path.append(ch)
+            if node.children[ch].is_end_of_word:
+                result.add(''.join(path))
+            board[x][y] = '#' # 特殊标记,表示节点已访问
+            for dx, dy in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
+                next_x = x + dx
+                next_y = y + dy
+                if 0 <= next_x < m and 0 <= next_y < n:
+                    dfs(next_x, next_y, node.children[ch], path)
+            board[x][y] = ch
+            path.pop()
+
+        trie = Trie()
+        for word in words:
+            trie.insert(word)
+
+        result = set()
+
+        m = len(board)
+        n = len(board[0])
+        for i in range(m):
+            for j in range(n):
+                dfs(i, j, trie.root, [])
+
+        return list(result)
+```
+
+
+
+
 
 
 

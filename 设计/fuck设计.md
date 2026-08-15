@@ -103,11 +103,11 @@ public:
 
 ```python
 class DLinkNode:
-        def __init__(self, key=0, value=0):
-            self.key = key
-            self.value = value
-            self.prev = None
-            self.next = None
+    def __init__(self, key=0, value=0):
+        self.key = key
+        self.value = value
+        self.prev = None
+        self.next = None
 
 class LRUCache:
     def __init__(self, capacity: int):
@@ -160,80 +160,6 @@ class LRUCache:
         node = self.tail.prev
         self.removeNode(node)
         return node
-```
-
-
-
-
-
-# 树
-
-## 208.实现 Trie（前缀树）[中等]
-
-### 链接
-
-+ [208. 实现 Trie (前缀树) - 力扣（LeetCode）](https://leetcode.cn/problems/implement-trie-prefix-tree)
-
-### 题目
-
-**[Trie](https://baike.baidu.com/item/字典树/9825209?fr=aladdin)**（发音类似 "try"）或者说 **前缀树** 是一种树形数据结构，用于高效地存储和检索字符串数据集中的键。这一数据结构有相当多的应用情景，例如自动补全和拼写检查。
-
-请你实现 Trie 类：
-
-- `Trie()` 初始化前缀树对象。
-- `void insert(String word)` 向前缀树中插入字符串 `word` 。
-- `boolean search(String word)` 如果字符串 `word` 在前缀树中，返回 `true`（即，在检索之前已经插入）；否则，返回 `false` 。
-- `boolean startsWith(String prefix)` 如果之前已经插入的字符串 `word` 的前缀之一为 `prefix` ，返回 `true` ；否则，返回 `false` 。
-
-### 思路
-
-**前缀树/字典树**的每个节点包含两部分：
-
-+ 指向子节点的指针数组。对于本题而言，只有26个字母。
-+ `isEnd`标识是否是一个`word`的结尾。
-
-`search`就是从根往下找，直到找到`word`的最后一个字符，如果所在节点`isEnd=True`，说明`word`在前缀树中；而`startsWith`不需要看`isEnd`。
-
-### 解法
-
-官解直接把`Trie`当做节点类，也不是不行，但感觉不符合一般树数据结构的写法，所以我还是特意定义了一个节点类。另外`searchPrefix`也可以写成递归形式，但是用`for`直接遍历`prefix`会更简单。
-
-```python
-class TrieNode:
-    def __init__(self):
-        self.children = [None] * 26
-        self.isEnd = False
-
-class Trie:
-    def __init__(self):
-        self.root = TrieNode()
-
-    def searchPrefix(self, prefix: str) -> TrieNode:
-        node = self.root
-        for c in prefix:
-            ch = ord(c) - ord('a')
-            if not node.children[ch]:
-                return None
-            node = node.children[ch]
-        return node
-
-    def insert(self, word: str) -> None:
-        node = self.root
-        for c in word:
-            ch = ord(c) - ord('a')
-            if not node.children[ch]:
-                node.children[ch] = TrieNode()
-            node = node.children[ch]
-        node.isEnd = True
-
-
-    def search(self, word: str) -> bool:
-        node = self.searchPrefix(word)
-        return node is not None and node.isEnd
-
-    def startsWith(self, prefix: str) -> bool:
-        node = self.searchPrefix(prefix)
-        return True if node else False	
 ```
 
 

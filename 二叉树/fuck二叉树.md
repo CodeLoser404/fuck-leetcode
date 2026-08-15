@@ -65,7 +65,6 @@ public:
 ### 解法
 
 ```c++
- */
 class Solution {
 public:
     bool isSameTree(TreeNode* p, TreeNode* q) {
@@ -175,7 +174,7 @@ class Solution {
 public:
     vector<int> rightSideView(TreeNode* root) {
         vector<int> res;
-        std::function<void(TreeNode*, int)> dfs = [&](TreeNode* node, int depth){
+        function<void(TreeNode*, int)> dfs = [&](TreeNode* node, int depth){
             if(node == NULL)
                 return;
             if(depth == res.size())
@@ -601,7 +600,7 @@ int main() {
 
 ### 题目
 
-给你二叉树的根节点 `root` ，返回其节点值的 **层序遍历** 。 （即逐层地，从左到右访问所有节点）。
+给你二叉树的根节点 `root` ，返回其节点值的 **层序遍历** 。（即逐层地，从左到右访问所有节点）。
 
 ### 解法
 
@@ -701,8 +700,8 @@ public:
         TreeNode* node;
         while(!que.empty()){
             node = que.front(); que.pop();
-            if(tmp->right) que.push(node->right);
-            if(tmp->left) que.push(node->left);
+            if(node->right) que.push(node->right);
+            if(node->left) que.push(node->left);
         }
         return node->val;
     }
